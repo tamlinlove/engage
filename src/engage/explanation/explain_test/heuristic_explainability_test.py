@@ -19,7 +19,7 @@ class HeuristicExplainabilityTest(EngageStateExplainabilityTest):
             self.answer_actions = self.answer_components["Actions"]
             self.answer_targets = self.answer_components["Targets"]
 
-    def to_message(self,image,time,blank_image):
+    def to_message(self,image,time,blank_image,**kwargs):
         msg = Explainability()
 
         msg.header.stamp = time

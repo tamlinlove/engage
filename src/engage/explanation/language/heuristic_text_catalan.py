@@ -664,3 +664,184 @@ class HeuristicTextCatalan(HeuristicText):
             return "en {}".format(name_func(name)) # TODO: This assumes NEWPERSON is masculine
         else:
             return "la {}".format(name_func(name)) # Assuming persona
+        
+    '''
+    PILOT STUFF
+    '''
+    def uncertainty_reason(self,true_outcome,person_name,true_conf_val,true_gaze_val,target,gaze_exp_vals,gaze_var,uncertainty_exp_vals,uncertainty_var):
+        # Start by getting true action
+        text = self.outcome_text_past(true_outcome,person_name)[:-1]
+        text += " perquè "
+        text += self.uncertainty_expression_past(true_conf_val,uncertainty_exp_vals,uncertainty_var)
+        text += " que "
+        text += self.gaze_expression_past(true_gaze_val,gaze_exp_vals,gaze_var,person_name,target)
+        text += "."
+
+        return text
+    
+    def uncertainty_expression_past(self,true_val,explanation_values,var):
+
+        approx_val = round(true_val,2)
+        min_range = min(explanation_values[var])
+        max_range = max(explanation_values[var])
+
+        thresh_min = None
+        if true_val < min_range:
+            # All counterfactuals are higher
+            threshold = min_range
+            thresh_min = True
+            approx_thresh = round(threshold,2)
+        elif true_val > max_range:
+            # All counterfactuals are lower:
+            threshold = max_range
+            thresh_min = False
+            approx_thresh = round(threshold,2)
+        else:
+            # True value is somewhere in between, meaning a more complex answer
+            threshold = None
+            approx_thresh = None
+
+        if threshold is None:
+            if approx_val == 0.00:
+                return "no estava gens segura"
+            elif approx_val == 0.33:
+                return "no estava gaire segura"
+            elif approx_val == 0.67:
+                return "estava bastant segura"
+            elif approx_val == 1.00:
+                return "estava molt segura"
+        else:
+            if thresh_min:
+                # True value is lower than a threshold
+                if approx_thresh == 0.33:
+                    return "no estava gens segura"
+                elif approx_thresh == 0.67:
+                    return "no estava segura"
+                elif approx_thresh == 1.00:
+                    return "no estava del tot segura"
+            else:
+                # True value is higher than a threshold
+                if approx_thresh == 0.67:
+                    return "estava molt segura"
+                elif approx_thresh == 0.33:
+                    return "estava segura"
+                elif approx_thresh == 0.00:
+                    return "estava almenys una mica segura"
+    
+    def gaze_expression_past(self,true_val,explanation_values,var,person_name,target):
+        approx_val = round(true_val,2)
+        min_range = min(explanation_values[var])
+        max_range = max(explanation_values[var])
+
+        thresh_min = None
+        if true_val < min_range:
+            # All counterfactuals are higher
+            threshold = min_range
+            thresh_min = True
+            approx_thresh = round(threshold,2)
+        elif true_val > max_range:
+            # All counterfactuals are lower:
+            threshold = max_range
+            thresh_min = False
+            approx_thresh = round(threshold,2)
+        else:
+            # True value is somewhere in between, meaning a more complex answer
+            threshold = None
+            approx_thresh = None
+
+        if threshold is None:
+            if approx_val == 0.00:
+                return "{} mirava lluny de mi".format(self.person_name(target,person_name))
+            elif approx_val == 0.33:
+                return "{} no em mirava".format(self.person_name(target,person_name))
+            elif approx_val == 0.67:
+                return "{} gairebé em mirava".format(self.person_name(target,person_name))
+            elif approx_val == 1.00:
+                return "{} i jo ens miràvem directament".format(self.person_name(target,person_name))
+        else:
+            if thresh_min:
+                # True value is lower than a threshold
+                if approx_thresh == 0.33:
+                    return "{} mirava lluny de mi".format(self.person_name(target,person_name))
+                elif approx_thresh == 0.67:
+                    return "{} no em mirava".format(self.person_name(target,person_name))
+                elif approx_thresh == 1.00:
+                    return "{} i jo no ens miràvem directament".format(self.person_name(target,person_name))
+            else:
+                # True value is higher than a threshold
+                if approx_thresh == 0.67:
+                    return "{} i jo ens miràvem directament".format(self.person_name(target,person_name))
+                elif approx_thresh == 0.33:
+                    return "{} em mirava".format(self.person_name(target,person_name))
+                elif approx_thresh == 0.00:
+                    return "{} em mirava almenys una mica".format(self.person_name(target,person_name))
+    
+    def uncertainty_foil_text(self,var,values):
+        val_settings = []
+
+        min_range = 0.00
+        max_range = 1.00
+
+        sorted_vals = sorted(values)
+        approx_max = round(sorted_vals[-1],2)
+        approx_min = round(sorted_vals[0],2)
+
+        min_val = approx_min == min_range
+        max_val = approx_max == max_range
+        
+        if len(sorted_vals) == 1:
+            approx_val = round(sorted_vals[0],2)
+
+            if approx_val == 0.00:
+                val_settings.append("Si no estigués gens segura")
+            elif approx_val == 0.33:
+                val_settings.append("Si no estigués gaire segura")
+            elif approx_val == 0.67:
+                val_settings.append("Si estigués bastant segura")
+            elif approx_val == 1.00:
+                val_settings.append("Si estigués molt segura")
+
+        else:
+            if min_val:
+                # Only concerns the highest value
+                if approx_max == 0.33:
+                    val_settings.append("Si no estigués segura")
+                elif approx_max == 0.67:
+                    val_settings.append("Si no estigués del tot segura")
+                elif approx_max == 1.00:
+                    # Somewhere in between
+                    val_settings.append("Si estigués del tot segura o si no estigués gens segura")
+
+            elif max_val:
+                # Only conerns the lowest value
+                if approx_min == 0.67:
+                    val_settings.append("Si estigués segura")
+                elif approx_min == 0.33:
+                    val_settings.append("Si estigués almenys una mica segura")
+                elif approx_min == 0.00:
+                    # Somewhere in between
+                    val_settings.append("Si estigués del tot segura o si no estigués gens segura")
+            else:
+                if approx_min == 0.33 and approx_max == 0.67:
+                    # This is the only valid combination unless another discretisation is introduced
+                    val_settings.append("Si no estigués molt insegura ni molt segura")
+
+            
+
+        if len(val_settings) == 0:
+            error_message = "No setting for {}:{} (min: {}, max: {})".format(var,values,min_val,max_val)
+            raise ValueError(error_message)
+        elif len(val_settings) == 1:
+            return val_settings[0]
+        else:
+            foil_text = ""
+            for val_set in val_settings:
+                foil_text += val_set + ", o "
+            return foil_text[:-4]
+        
+    def uncertainty_test_answers(self):
+        return [
+            "Intentaré que algú em parli",
+            "Intentaré parlar amb la persona A",
+            "Intentaré parlar amb la persona B",
+        ]

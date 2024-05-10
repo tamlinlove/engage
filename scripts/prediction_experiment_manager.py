@@ -96,7 +96,7 @@ class PredictionExperimentManager:
         if self.state == "TEST":
             if self.timeout_timer is not None:
                 self.timeout_timer.shutdown()
-                if self.page in ["prediction_page","end_page"]:
+                if self.page in ["prediction_page","uncertainty_prediction_page","end_page"]:
                     duration = self.start_timeout_duration
                 elif user_input.action == "deny_btn":
                     duration = self.start_timeout_duration / 2

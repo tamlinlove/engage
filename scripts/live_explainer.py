@@ -19,6 +19,11 @@ class LiveExplainer:
         "heuristic_lime":HeuristicLimeExplainer,
     }
 
+    explainability_msgs = {
+        "roman24":Explainability,
+        "pilot24":Explainability,
+    }
+
     def __init__(self,
                  rgb_image_topic,
                  pose_image_topic,
@@ -28,11 +33,13 @@ class LiveExplainer:
                  explainer="counterfactual",
                  language="english",
                  use_pose=False,
+                 experiment="roman24",
                  rate=20) -> None:
         self.rate = rospy.Rate(rate)
         self.decision_maker = decision_maker
         self.buffer_length = rate*buffer_time
         self.language = language
+        self.experiment = experiment
 
         # Decision-Maker
         # TODO: The parameters of the decision maker should match the real ones ... how?
@@ -57,10 +64,10 @@ class LiveExplainer:
             DecisionManager.decision_state_msgs[decision_maker],
             callback=self.decision_state_callback
             )
-        results_sub = rospy.Subscriber("/out_explanation",Explainability,callback=self.update_test_conditions)
+        results_sub = rospy.Subscriber("/out_explanation",self.explainability_msgs[experiment],callback=self.update_test_conditions)
         
         # Publishers
-        self.et_pub = rospy.Publisher("/input_explanation",Explainability,queue_size=10)
+        self.et_pub = rospy.Publisher("/input_explanation",self.explainability_msgs[experiment],queue_size=10)
         
         # Image buffer
         self.image_buffer = []
@@ -74,6 +81,9 @@ class LiveExplainer:
         self.var_nums = self.explainer.obs_type.variable_counter()
         self.groups = groups
         self.curr_group_index = 0
+
+        # Pilot
+        self.curr_id = 1
 
     def update_image_buffer(self,rgb_img):
         self.image_buffer.append(rgb_img)
@@ -125,7 +135,10 @@ class LiveExplainer:
         self.curr_group_index = (self.curr_group_index + 1) % len(self.groups)
 
         # Update var nums
-        self.var_nums[result_msg.explanation_variable] += 1
+        #self.var_nums[result_msg.explanation_variable] += 1
+
+        # Update user id
+        self.curr_id += 1
 
     def get_decision_context(self,time):
         try:
@@ -191,6 +204,7 @@ class LiveExplainer:
 
         return out
 
+    # Debugging - remove
     def save_image(self,img):
         cv2.imwrite('/home/tamlin/engage/latest_decision.jpeg', img)
 
@@ -250,8 +264,8 @@ class LiveExplainer:
     def publish_explainability_test(self,et_test,image,time):
         ros_img = self.cv_bridge.cv2_to_compressed_imgmsg(image)
         blank_image = self.cv_bridge.cv2_to_compressed_imgmsg(np.zeros((1,1,3), np.uint8))
-        message = et_test.to_message(ros_img,time,blank_image)
-        print(message)
+        message = et_test.to_message(ros_img,time,blank_image,user_id=self.curr_id,num_people=0)
+        #print(message)
         self.et_pub.publish(message)
 
 
@@ -280,21 +294,29 @@ if __name__ == "__main__":
                         type=str, default="english")
     parser.add_argument("--image_mode", help="Whether the image used is rgb or annotated pose",
                         type=str, default="rgb")
+    parser.add_argument("--experiment", help="Allows for settings related to the experiment e.g. roman24 or pilot24",
+                        type=str, default="roman24")
     args = parser.parse_args(rospy.myargv()[1:])
 
-    if args.groups == "all":
-        groups = [0,1,2]
-    elif args.groups == "control":
-        groups = [0]
-    elif args.groups == "nocf":
-        groups = [1]
-    elif args.groups == "full":
-        groups = [2]
-    elif args.groups == "nomid":
-        groups = [0,2]
-    else:
-        raise Exception(args.groups)
-    
+    if args.experiment == "roman24":
+        if args.groups == "all":
+            groups = [0,1,2]
+        elif args.groups == "control":
+            groups = [0]
+        elif args.groups == "nocf":
+            groups = [1]
+        elif args.groups == "full":
+            groups = [2]
+        elif args.groups == "nomid":
+            groups = [0,2]
+        else:
+            raise Exception(args.groups)
+    elif args.experiment == "pilot24":
+        if args.groups == "all":
+            groups = [0,1,2,3,4]
+        else:
+            raise Exception(args.groups)
+          
     use_pose = False
     if args.image_mode == "pose":
         use_pose = True
@@ -308,5 +330,6 @@ if __name__ == "__main__":
         groups=groups,
         language=args.language,
         use_pose=use_pose,
+        experiment=args.experiment,
     )
     explainer.run()

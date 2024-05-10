@@ -214,6 +214,62 @@ class HeuristicExplanation(Explanation):
             self.text_generator = HeuristicTextCatalan()
         else:
             raise Exception("Language {} not recognised".format(language))
+        
+    '''
+    PILOT
+    '''
+    def present_uncertainty_explanation(self,gaze_explanation,confidence_explanation,cf_gaze=True):
+        '''
+        cf_gaze = True, intervene on gaze for counterfactual
+        cf_gaze = False, intervene on confidence for counterfactual
+        '''
+        # Reason
+        true_conf_val = confidence_explanation.true_values[confidence_explanation.variables[0]]
+        true_gaze_val = gaze_explanation.true_values[gaze_explanation.variables[0]]
+        target = self.var_cats[self.variables[0]]
+        gaze_exp_vals = gaze_explanation.explanation_values
+        gaze_var = gaze_explanation.variables[0]
+        uncertainty_exp_vals = confidence_explanation.explanation_values
+        uncertainty_var = confidence_explanation.variables[0]
+        reason = self.text_generator.uncertainty_reason(self.true_outcome,self.person_name,true_conf_val,true_gaze_val,target,gaze_exp_vals,gaze_var,uncertainty_exp_vals,uncertainty_var)
+
+        # Counterfactual
+        if cf_gaze:
+            counterfactual = gaze_explanation.counterfactual_component_var_single_var(gaze_explanation.variables[0])
+        else:
+            counterfactual = confidence_explanation.uncertainty_counterfactual_component_var_single_var(confidence_explanation.variables[0])
+
+        return reason,counterfactual
+    
+    def uncertainty_counterfactual_component_var_single_var(self,var):
+        # Cluster outcomes
+        outcome_clusters = {}
+        outcome_objects = {}
+        for i in range(len(self.explanation_values[var])):
+            if str(self.outcomes[var][i]) not in outcome_clusters:
+                outcome_clusters[str(self.outcomes[var][i])] = []
+                outcome_objects[str(self.outcomes[var][i])] = self.outcomes[var][i]
+            outcome_clusters[str(self.outcomes[var][i])].append(self.explanation_values[var][i])
+
+        # Explain each counterfactual outcome
+        var_name = self.var_names[var]
+        subject =  self.person_name(self.var_cats[var])
+        cards = self.true_observation.variable_cardinalities[var_name]
+
+        counterfactual_components = []
+        for outcome in outcome_clusters:
+            foil_text = self.text_generator.uncertainty_foil_text(var,outcome_clusters[outcome])
+            counterfactual_decision_text = self.text_generator.outcome_text_conditional(outcome_objects[outcome],self.person_name)
+            counterfactual_components.append(self.text_generator.construct_counterfactual_text(foil_text,counterfactual_decision_text))
+
+        # Concantenate
+        counterfactual_text = ""
+        for comp in counterfactual_components:
+            counterfactual_text += comp
+        return counterfactual_text[1:]
+    
+    def uncertainty_test_answers(self):
+        return self.text_generator.uncertainty_test_answers()
 
 
     

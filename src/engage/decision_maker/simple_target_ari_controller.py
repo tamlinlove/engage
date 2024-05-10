@@ -173,7 +173,7 @@ class SimpleTargetARIController(RobotController):
 
         if page_name == "welcome_page":
             exp = "excited"
-        elif page_name == "prediction_page":
+        elif page_name in ["prediction_page","gaze_prediction_page","uncertainty_prediction_page"]:
             exp = "confused" 
         elif page_name == "end_page":
             exp = "amazed"
