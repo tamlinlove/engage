@@ -11,7 +11,7 @@ from engage.decision_maker.decision_manager import DecisionManager
 from engage.explanation.hri_explainer import HRIExplainer
 from engage.explanation.heuristic_lime_explainer import HeuristicLimeExplainer
 from explanation_msgs.msg import Explainability
-from engage.msg import PeoplePositions
+from engage.msg import PeoplePositions,StampedUserID
 
 class LiveExplainer:
     explainers = {
@@ -68,6 +68,7 @@ class LiveExplainer:
         
         # Publishers
         self.et_pub = rospy.Publisher("/input_explanation",self.explainability_msgs[experiment],queue_size=10)
+        self.id_pub = rospy.Publisher("/explanation_user_id",StampedUserID,queue_size=10)
         
         # Image buffer
         self.image_buffer = []
@@ -84,6 +85,9 @@ class LiveExplainer:
 
         # Pilot
         self.curr_id = 1
+
+        # Debug
+        self.image_counter = 0
 
     def update_image_buffer(self,rgb_img):
         self.image_buffer.append(rgb_img)
@@ -109,6 +113,7 @@ class LiveExplainer:
             dec_img,positions = self.get_decision_context(dec_time)
             # Get people name mapping
             names,ids = self.get_name_mapping(positions)
+            num_people = len(list(ids.keys()))
 
             # Process image, add labels
             img = self.ros_img_to_cv2(dec_img)
@@ -119,12 +124,11 @@ class LiveExplainer:
             self.explainer.setup_explanation(dec,query=None,decision_maker=self.decision_maker,names=names)
 
             # Explain
-            explainability_test = self.explainer.generate_explainability_test(self.groups[self.curr_group_index],self.var_nums,language=self.language)
+            explainability_test = self.explainer.generate_explainability_test(self.groups[self.curr_group_index],self.var_nums,language=self.language,num_people=num_people)
             if not explainability_test.no_explanations:
                 print("Explanation found")
                 self.publish_explainability_test(explainability_test,img,dec_time)
                 #self.save_explainability_test(explainability_test)
-
                
             else:
                 print("No explanations found")
@@ -138,6 +142,8 @@ class LiveExplainer:
         #self.var_nums[result_msg.explanation_variable] += 1
 
         # Update user id
+        print("Received a new result, old id = {}".format(self.curr_id))
+        self.publish_id(result_msg.header.stamp)
         self.curr_id += 1
 
     def get_decision_context(self,time):
@@ -206,7 +212,8 @@ class LiveExplainer:
 
     # Debugging - remove
     def save_image(self,img):
-        cv2.imwrite('/home/tamlin/engage/latest_decision.jpeg', img)
+        cv2.imwrite('/home/tamlin/engage/latest_decision_{}.jpeg'.format(self.image_counter), img)
+        self.image_counter += 1
 
     def save_explainability_test(self,explainability_test):
         f = open("/home/tamlin/engage/explanations.txt", "a")
@@ -264,9 +271,15 @@ class LiveExplainer:
     def publish_explainability_test(self,et_test,image,time):
         ros_img = self.cv_bridge.cv2_to_compressed_imgmsg(image)
         blank_image = self.cv_bridge.cv2_to_compressed_imgmsg(np.zeros((1,1,3), np.uint8))
-        message = et_test.to_message(ros_img,time,blank_image,user_id=self.curr_id,num_people=0)
+        message = et_test.to_message(ros_img,time,blank_image,user_id=self.curr_id)
         #print(message)
         self.et_pub.publish(message)
+
+    def publish_id(self,time):
+        stuid = StampedUserID()
+        stuid.header.stamp = time
+        stuid.user_id = self.curr_id
+        self.id_pub.publish(stuid)
 
 
     def run(self):

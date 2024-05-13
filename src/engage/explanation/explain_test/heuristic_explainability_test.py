@@ -10,7 +10,8 @@ class HeuristicExplainabilityTest(EngageStateExplainabilityTest):
                  ignore_uninteresting=True,
                  names=None,
                  language="english",
-                 restricted_actions=[HeuristicDecisionMSG.ELICIT_GENERAL,HeuristicDecisionMSG.ELICIT_TARGET]
+                 restricted_actions=[HeuristicDecisionMSG.ELICIT_GENERAL,HeuristicDecisionMSG.ELICIT_TARGET],
+                 **kwargs
                  ) -> None:
         super().__init__(explanations, group, var_nums, ignore_uninteresting,names,language=language,restricted_actions=restricted_actions)
 

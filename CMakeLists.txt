@@ -64,6 +64,7 @@ add_message_files(
   PoseArrayUncertain.msg
   RobotDecision.msg
   RobotStateDecision.msg
+  StampedUserID.msg
 )
 
 # Generate services in the 'srv' folder

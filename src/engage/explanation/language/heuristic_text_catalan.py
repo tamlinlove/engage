@@ -226,7 +226,7 @@ class HeuristicTextCatalan(HeuristicText):
                     elif approx_val == 0.33:
                         return "{} no em mirava".format(subject)
                     elif approx_val == 0.67:
-                        return "{} em mirava una mica".format(subject)
+                        return "{} gairebé em mirava".format(subject)
                     elif approx_val == 1.00:
                         return "{} i jo ens miràvem directament".format(subject)
                 else:
@@ -341,7 +341,7 @@ class HeuristicTextCatalan(HeuristicText):
                     elif approx_val == 0.33:
                         val_settings.append("Si {} no em mirés".format(subject))
                     elif approx_val == 0.67:
-                        val_settings.append("Si {} em mirés una mica".format(subject))
+                        val_settings.append("Si {} gairebé em mirés".format(subject))
                     elif approx_val == 1.00:
                         val_settings.append("Si {} i jo ens miréssim directament".format(subject))
 
@@ -365,7 +365,7 @@ class HeuristicTextCatalan(HeuristicText):
                         if approx_min == 0.67:
                             val_settings.append("Si {} em mirés".format(subject))
                         elif approx_min == 0.33:
-                            val_settings.append("Si {} em mirés una mica".format(subject))
+                            val_settings.append("Si {} em mirés almenys una mica".format(subject))
                         elif approx_min == 0.00:
                             # Somewhere in between
                             val_settings.append("Si {} i jo ens miréssim directament o si {} no em mirés gens".format(subject,subject))
@@ -494,7 +494,7 @@ class HeuristicTextCatalan(HeuristicText):
                 elif approx_val == 0.33:
                     return "si {} no em mirés".format(subject)
                 elif approx_val == 0.67:
-                    return "si {} em mirés una mica".format(subject)
+                    return "si {} gairebé em mirés".format(subject)
                 elif approx_val == 1.00:
                     return "si {} i jo ens miréssim directament".format(subject)
             elif var_name == "Engagement Value":
@@ -581,7 +581,7 @@ class HeuristicTextCatalan(HeuristicText):
                 elif approx_val == 0.33:
                     return "{} no em mirava".format(subject)
                 elif approx_val == 0.67:
-                    return "{} em mirava una mica".format(subject)
+                    return "{} gairebé em mirava".format(subject)
                 elif approx_val == 1.00:
                     return "{} i jo ens miràvem directament".format(subject)
             elif var_name == "Engagement Value":

@@ -13,6 +13,7 @@ class PilotHeuristicExplainabilityTest(ExplainabilityTest):
                  ignore_uninteresting=True,
                  names=None,
                  language="english",
+                 num_people=0,
                  restricted_actions=[HeuristicDecisionMSG.ELICIT_GENERAL,HeuristicDecisionMSG.ELICIT_TARGET]
                  ) -> None:
         '''
@@ -24,6 +25,7 @@ class PilotHeuristicExplainabilityTest(ExplainabilityTest):
         '''
         self.group = group
         self.no_explanations = False
+        self.num_people = num_people
 
         if len(explanations) == 0:
             self.no_explanations = True
@@ -120,13 +122,13 @@ class PilotHeuristicExplainabilityTest(ExplainabilityTest):
                 return False
         return True
 
-    def to_message(self,image,time,blank_image,user_id=0,num_people=0):
+    def to_message(self,image,time,blank_image,user_id=0):
         msg = Explainability()
 
         msg.header.stamp = time
         msg.id = user_id
         msg.group = self.group
-        msg.num_people = num_people
+        msg.num_people = self.num_people
         msg.is_minor = False
         msg.image = image
         msg.blank_image = blank_image
@@ -136,8 +138,8 @@ class PilotHeuristicExplainabilityTest(ExplainabilityTest):
         msg.question_text = ""
         msg.answer_list_gaze = self.answer_list_gaze
         msg.correct_answer_gaze = self.correct_answer_gaze+1
-        msg.answer_list_uncertainty = self.answer_list_gaze
-        msg.correct_answer_uncertainty = self.correct_answer_gaze+1
+        msg.answer_list_uncertainty = self.answer_list_uncertainty
+        msg.correct_answer_uncertainty = self.correct_answer_uncertainty+1
 
         return msg
     
