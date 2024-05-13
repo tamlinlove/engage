@@ -51,7 +51,7 @@
         />
 
     <node pkg="rosbag" type="record" name="results_record"
-        args="-O $(arg bag_dir)/prediction_experiment/$(arg exp).bag --split --duration=$(arg rosbag_duration)m /hri_engage/decision_states /out_explanation"
+        args="-O $(arg bag_dir)/prediction_experiment/$(arg exp).bag --split --duration=$(arg rosbag_duration)m /hri_engage/decision_states /out_explanation /explanation_user_id"
         />
 
     <node name="pose" pkg="engage" type="pose.py"
